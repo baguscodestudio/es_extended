@@ -48,23 +48,23 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 		DropPlayer(self.source, reason)
 	end
 
-	self.setMoney = function(money)
+	self.setMoney = function(money, desc)
 		money = ESX.Math.Round(money)
-		self.setAccountMoney('money', money)
+		self.setAccountMoney('money', money, desc)
 	end
 
 	self.getMoney = function()
 		return self.getAccount('money').money
 	end
 
-	self.addMoney = function(money)
+	self.addMoney = function(money, desc)
 		money = ESX.Math.Round(money)
-		self.addAccountMoney('money', money)
+		self.addAccountMoney('money', money, desc)
 	end
 
-	self.removeMoney = function(money)
+	self.removeMoney = function(money, desc)
 		money = ESX.Math.Round(money)
-		self.removeAccountMoney('money', money)
+		self.removeAccountMoney('money', money, desc)
 	end
 
 	self.getIdentifier = function()
@@ -144,7 +144,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 		self.name = newName
 	end
 
-	self.setAccountMoney = function(accountName, money)
+	self.setAccountMoney = function(accountName, money, desc)
 		if money >= 0 then
 			local account = self.getAccount(accountName)
 
@@ -154,11 +154,12 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 				account.money = newMoney
 				if accountName ~= 'bank' then Inventory.SetItem(self.source, accountName, money) end
 				self.triggerEvent('esx:setAccountMoney', account)
+				TriggerEvent('logger:money', self.identifier, 'Set', account, money, account.money, desc)
 			end
 		end
 	end
 
-	self.addAccountMoney = function(accountName, money)
+	self.addAccountMoney = function(accountName, money, desc)
 		if money > 0 then
 			local account = self.getAccount(accountName)
 
@@ -167,11 +168,12 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 				account.money = newMoney
 				if accountName ~= 'bank' then Inventory.AddItem(self.source, accountName, money) end
 				self.triggerEvent('esx:setAccountMoney', account)
+				TriggerEvent('logger:money', self.identifier, 'Added', account, money, account.money, desc)
 			end
 		end
 	end
 
-	self.removeAccountMoney = function(accountName, money)
+	self.removeAccountMoney = function(accountName, money, desc)
 		if money > 0 then
 			local account = self.getAccount(accountName)
 
@@ -180,6 +182,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 				account.money = newMoney
 				if accountName ~= 'bank' then Inventory.RemoveItem(self.source, accountName, money) end
 				self.triggerEvent('esx:setAccountMoney', account)
+				TriggerEvent('logger:money', self.identifier, 'Removed', account, money, account.money, desc)
 			end
 		end
 	end
@@ -260,7 +263,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 			local Player = Player(self.source).state
 
 			TriggerEvent('esx:setJob', self.source, self.job, lastJob)
-			self.triggerEvent('esx:setJob', self.job)
+			self.triggerEvent('esx:setJob', self.job, lastJob)
 			Player.job = jobObject.name
 			Player.grade = gradeObject.name
 		else
