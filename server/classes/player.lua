@@ -154,7 +154,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 				account.money = newMoney
 				if accountName ~= 'bank' then Inventory.SetItem(self.source, accountName, money) end
 				self.triggerEvent('esx:setAccountMoney', account)
-				TriggerEvent('logger:money', self.identifier, 'Set', account, money, account.money, desc)
+				TriggerEvent('logger:money', self.identifier, 'Set', accountName, newMoney, account.money, desc)
 			end
 		end
 	end
@@ -168,7 +168,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 				account.money = newMoney
 				if accountName ~= 'bank' then Inventory.AddItem(self.source, accountName, money) end
 				self.triggerEvent('esx:setAccountMoney', account)
-				TriggerEvent('logger:money', self.identifier, 'Added', account, money, account.money, desc)
+				TriggerEvent('logger:money', self.identifier, 'Added', accountName, money, account.money, desc)
 			end
 		end
 	end
@@ -182,7 +182,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 				account.money = newMoney
 				if accountName ~= 'bank' then Inventory.RemoveItem(self.source, accountName, money) end
 				self.triggerEvent('esx:setAccountMoney', account)
-				TriggerEvent('logger:money', self.identifier, 'Removed', account, money, account.money, desc)
+				TriggerEvent('logger:money', self.identifier, 'Removed', accountName, money, account.money, desc)
 			end
 		end
 	end
