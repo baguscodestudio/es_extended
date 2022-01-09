@@ -332,13 +332,13 @@ end
 
 ESX.Game.SpawnObject = function(object, coords, cb, networked)
 	local model = type(object) == 'number' and object or GetHashKey(object)
-	local vector = type(coords) == "vector3" and coords or vec(coords.x, coords.y, coords.z)
+	coords = type(coords) == 'vector3' and coords or type(coords) == 'table' and coords or error('expected xyz coordinates when spawning object, received '..type(coords))
 	networked = networked == nil and true or networked
 
 	CreateThread(function()
 		ESX.Streaming.RequestModel(model)
 
-		local obj = CreateObject(model, vector.x, vector.y, vector.z, networked, false, true)
+		local obj = CreateObject(model, coords.x, coords.y, coords.z, networked, false, true)
 		if cb then
 			cb(obj)
 		end
@@ -361,12 +361,12 @@ end
 
 ESX.Game.SpawnVehicle = function(vehicle, coords, heading, cb, networked)
 	local model = (type(vehicle) == 'number' and vehicle or GetHashKey(vehicle))
-	local vector = type(coords) == "vector3" and coords or vec(coords.x, coords.y, coords.z)
+	coords = type(coords) == 'vector3' and coords or type(coords) == 'table' and coords or error('expected xyz coordinates when spawning vehicle, received '..type(coords))
 	networked = networked == nil and true or networked
 	CreateThread(function()
 		ESX.Streaming.RequestModel(model)
 
-		vehicle = CreateVehicle(model, vector.x, vector.y, vector.z, heading, networked, false)
+		vehicle = CreateVehicle(model, coords.x, coords.y, coords.z, heading, networked, false)
 
 		if networked then
 			local id = NetworkGetNetworkIdFromEntity(vehicle)
@@ -378,7 +378,7 @@ ESX.Game.SpawnVehicle = function(vehicle, coords, heading, cb, networked)
 		SetModelAsNoLongerNeeded(model)
 		SetVehRadioStation(vehicle, 'OFF')
 
-		RequestCollisionAtCoord(vector.x, vector.y, vector.z)
+		RequestCollisionAtCoord(coords.x, coords.y, coords.z)
 		while not HasCollisionLoadedAroundEntity(vehicle) do
 			Wait(0)
 		end
@@ -519,18 +519,15 @@ ESX.Game.GetVehicleInDirection = function()
 	local playerPed    = ESX.PlayerData.ped
 	local playerCoords = GetEntityCoords(playerPed)
 	local inDirection  = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 5.0, 0.0)
-	local rayHandle    = StartShapeTestLosProbe(playerCoords.x, playerCoords.y, playerCoords.z, inDirection, 10, ESX.PlayerData.ped, 0)
-	while true do
-		Wait(0)
-		local _, hit, _, _, entityHit = GetShapeTestResult(rayHandle)
-		if result ~= 1 then
-			if hit == 1 and GetEntityType(entityHit) == 2 then
-				local entityCoords = GetEntityCoords(entityHit)
-				return entityHit, entityCoords
-			end
-			return nil
-		end
+	local rayHandle    = StartShapeTestRay(playerCoords, inDirection, 10, playerPed, 0)
+	local _, hit, _, _, entityHit = GetShapeTestResult(rayHandle)
+
+	if hit == 1 and GetEntityType(entityHit) == 2 then
+		local entityCoords = GetEntityCoords(entityHit)
+		return entityHit, entityCoords
 	end
+
+	return nil
 end
 
 ESX.Game.GetVehicleProperties = function(vehicle)
@@ -752,10 +749,10 @@ ESX.Game.SetVehicleProperties = function(vehicle, props)
 end
 
 ESX.Game.Utils.DrawText3D = function(coords, text, size, font)
-	local vector = type(coords) == "vector3" and coords or vec(coords.x, coords.y, coords.z)
+	coords = type(coords) == 'vector3' and coords or type(coords) == 'table' and vec3(coords.x, coords.y, coords.z) or error('expected xyz coordinates when drawing text, received '..type(coords))
 
 	local camCoords = GetGameplayCamCoords()
-	local distance = #(vector - camCoords)
+	local distance = #(coords - camCoords)
 
 	if not size then size = 1 end
 	if not font then font = 0 end
@@ -771,7 +768,7 @@ ESX.Game.Utils.DrawText3D = function(coords, text, size, font)
 	SetTextEntry('STRING')
 	SetTextCentre(true)
 	AddTextComponentString(text)
-	SetDrawOrigin(vector.x, vector.y, vector.z, 0)
+	SetDrawOrigin(coords.x, coords.y, coords.z, 0)
 	DrawText(0.0, 0.0)
 	ClearDrawOrigin()
 end

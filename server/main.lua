@@ -36,9 +36,7 @@ function onPlayerJoined(playerId)
 		if ESX.GetPlayerFromIdentifier(identifier) then
 			DropPlayer(playerId, ('there was an error loading your character!\nError code: identifier-active-ingame\n\nThis error is caused by a player on this server who has the same identifier as you have. Make sure you are not playing on the same Rockstar account.\n\nYour Rockstar identifier: %s'):format(identifier))
 		else
-			exports.oxmysql:prepare('SELECT 1 FROM users WHERE identifier = ?', {
-				{identifier}
-			}, function(result)
+			MySQL.prepare('SELECT 1 FROM users WHERE identifier = ?', {identifier},function(result)
 				if result then
 					loadESXPlayer(identifier, playerId, false)
 				else createESXPlayer(identifier, playerId) end
@@ -64,15 +62,15 @@ function createESXPlayer(identifier, playerId, data)
 	end
 
 	if not Config.Multichar then
-		exports.oxmysql:prepare(NewPlayer, {{
+		MySQL.prepare(NewPlayer, {
 			json.encode(accounts),
 			identifier,
 			defaultGroup,
-		}}, function()
+		}, function()
 			loadESXPlayer(identifier, playerId, true)
 		end)
 	else
-		exports.oxmysql:prepare(NewPlayer, {{
+		MySQL.prepare(NewPlayer, {
 			json.encode(accounts),
 			identifier,
 			defaultGroup,
@@ -81,7 +79,7 @@ function createESXPlayer(identifier, playerId, data)
 			data.dateofbirth,
 			data.sex,
 			data.height,
-		}}, function()
+		}, function()
 			loadESXPlayer(identifier, playerId, true)
 		end)
 	end
@@ -111,8 +109,8 @@ function loadESXPlayer(identifier, playerId, isNew)
 		job = {},
 		playerName = GetPlayerName(playerId)
 	}
-	exports.oxmysql:prepare(LoadPlayer, {{ identifier }}, function(result)
-		local foundAccounts, job, grade, jobObject, gradeObject = {}, result.job, result.job_grade, nil, nil
+	MySQL.prepare(LoadPlayer, { identifier }, function(result)
+		local foundAccounts, job, grade, jobObject, gradeObject = {}, result.job, tostring(result.job_grade), nil, nil
 		local Player = Player(playerId).state
 
 		-- Accounts
@@ -137,7 +135,7 @@ function loadESXPlayer(identifier, playerId, isNew)
 			jobObject, gradeObject = ESX.Jobs[job], ESX.Jobs[job].grades[grade]
 		else
 			print(('[^3WARNING^7] Ignoring invalid job for %s [job: %s, grade: %s]'):format(identifier, job, grade))
-			job, grade = 'unemployed', 0
+			job, grade = 'unemployed', '0'
 			jobObject, gradeObject = ESX.Jobs[job], ESX.Jobs[job].grades[grade]
 		end
 
@@ -145,7 +143,7 @@ function loadESXPlayer(identifier, playerId, isNew)
 		userData.job.name = jobObject.name
 		userData.job.label = jobObject.label
 
-		userData.job.grade = grade
+		userData.job.grade = tonumber(grade)
 		userData.job.grade_name = gradeObject.name
 		userData.job.grade_label = gradeObject.label
 		userData.job.grade_salary = gradeObject.salary
@@ -223,7 +221,8 @@ function loadESXPlayer(identifier, playerId, isNew)
 			job = xPlayer.getJob(),
 			maxWeight = xPlayer.getMaxWeight(),
 			money = xPlayer.getMoney(),
-			dead = false
+			dead = false,
+			loadout = {} -- enable baby-mode, I cbf dealing with this anymore
 		}, isNew, userData.skin)
 
 

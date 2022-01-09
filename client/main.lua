@@ -182,21 +182,6 @@ RegisterNetEvent('esx:setJob', function(Job)
 	ESX.SetPlayerData('job', Job)
 end)
 
-RegisterNetEvent('esx:spawnVehicle', function(vehicle)
-	local model = (type(vehicle) == 'number' and vehicle or GetHashKey(vehicle))
-
-	if IsModelInCdimage(model) then
-		local playerPed = ESX.PlayerData.ped
-		local playerCoords, playerHeading = GetEntityCoords(playerPed), GetEntityHeading(playerPed)
-
-		ESX.Game.SpawnVehicle(model, playerCoords, playerHeading, function(vehicle)
-			TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
-		end)
-	else
-		TriggerEvent('chat:addMessage', { args = { '^1SYSTEM', 'Invalid vehicle model.' } })
-	end
-end)
-
 RegisterNetEvent('esx:registerSuggestions', function(registeredCommands)
 	for name,command in pairs(registeredCommands) do
 		if command.suggestion then
@@ -205,100 +190,66 @@ RegisterNetEvent('esx:registerSuggestions', function(registeredCommands)
 	end
 end)
 
-RegisterNetEvent('esx:deleteVehicle', function(radius)
-	local playerPed = ESX.PlayerData.ped
-	if radius and tonumber(radius) then
-		radius = tonumber(radius) + 0.01
-		local vehicles = ESX.Game.GetVehiclesInArea(GetEntityCoords(playerPed), radius)
-
-		for k,entity in ipairs(vehicles) do
-			local attempt = 0
-
-			while not NetworkHasControlOfEntity(entity) and attempt < 100 and DoesEntityExist(entity) do
-				Wait(100)
-				NetworkRequestControlOfEntity(entity)
-				attempt = attempt + 1
-			end
-
-			if DoesEntityExist(entity) and NetworkHasControlOfEntity(entity) then
-				ESX.Game.DeleteVehicle(entity)
-			end
-		end
-	else
-		local vehicle, attempt = ESX.Game.GetVehicleInDirection(), 0
-
-		if IsPedInAnyVehicle(playerPed, true) then
-			vehicle = GetVehiclePedIsIn(playerPed, false)
-		end
-
-		while not NetworkHasControlOfEntity(vehicle) and attempt < 100 and DoesEntityExist(vehicle) do
-			Wait(100)
-			NetworkRequestControlOfEntity(vehicle)
-			attempt = attempt + 1
-		end
-
-		if DoesEntityExist(vehicle) and NetworkHasControlOfEntity(vehicle) then
-			ESX.Game.DeleteVehicle(vehicle)
-		end
-	end
-end)
-
 RegisterNetEvent('esx:tpm', function()
-	if LocalPlayer.state.admin == true then
-		local WaypointHandle = GetFirstBlipInfoId(8)
-		if DoesBlipExist(WaypointHandle) then
-			local playerPed = ESX.PlayerData.ped
-			local waypointCoords = GetBlipInfoIdCoord(WaypointHandle)
-			for height = 1, 1000 do
-				SetPedCoordsKeepVehicle(playerPed, waypointCoords.x, waypointCoords.y, height + 0.0)
-				local foundGround, zPos = GetGroundZFor_3dCoord(waypointCoords.x, waypointCoords.y, height + 0.0)
-				if foundGround then
+	ESX.TriggerServerCallback('esx:admincommand', function(result)
+		if result then
+			local WaypointHandle = GetFirstBlipInfoId(8)
+			if DoesBlipExist(WaypointHandle) then
+				local playerPed = ESX.PlayerData.ped
+				local waypointCoords = GetBlipInfoIdCoord(WaypointHandle)
+				for height = 1, 1000 do
 					SetPedCoordsKeepVehicle(playerPed, waypointCoords.x, waypointCoords.y, height + 0.0)
-					break
-				end
+					local foundGround, zPos = GetGroundZFor_3dCoord(waypointCoords.x, waypointCoords.y, height + 0.0)
+					if foundGround then
+						SetPedCoordsKeepVehicle(playerPed, waypointCoords.x, waypointCoords.y, height + 0.0)
+						break
+					end
 
-				Wait(5)
+					Wait(5)
+				end
+				TriggerEvent('chat:addMessage', 'Successfully Teleported')
+			else
+				TriggerEvent('chat:addMessage', 'No Waypoint Set')
 			end
-			TriggerEvent('chat:addMessage', 'Successfully Teleported')
-		else
-			TriggerEvent('chat:addMessage', 'No Waypoint Set')
 		end
-	end
+	end)
 end)
 
 local noclip
 RegisterNetEvent('esx:noclip', function()
-	if LocalPlayer.state.admin == true then
-		if not noclip then
-			local playerPed = ESX.PlayerData.ped
-			SetEntityInvincible(playerPed, true)
-			SetPedAoBlobRendering(playerPed, false)
-			SetEntityAlpha(playerPed, 0)
-			local position = GetEntityCoords(playerPed)
+	ESX.TriggerServerCallback('esx:admincommand', function(result)
+		if result then
+			if not noclip then
+				local playerPed = ESX.PlayerData.ped
+				SetEntityInvincible(playerPed, true)
+				SetPedAoBlobRendering(playerPed, false)
+				SetEntityAlpha(playerPed, 0)
+				local position = GetEntityCoords(playerPed)
 
-			noclip = SetInterval(function()
-				playerPed = ESX.PlayerData.ped
-				local heading = GetFinalRenderedCamRot(2)?.z or 0.0
-				SetEntityHeading(playerPed, heading)
+				noclip = SetInterval(function()
+					playerPed = ESX.PlayerData.ped
+					local heading = GetFinalRenderedCamRot(2)?.z or 0.0
+					SetEntityHeading(playerPed, heading)
 
-				if (IsControlPressed(1, 8)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, -1.0, 0.0) end
-				if (IsControlPressed(1, 32)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 1.0, 0.0) end
-				if (IsControlPressed(1, 27)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 0.0, 1.0) end
-				if (IsControlPressed(1, 173)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 0.0, -1.0) end
+					if (IsControlPressed(1, 8)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, -1.0, 0.0) end
+					if (IsControlPressed(1, 32)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 1.0, 0.0) end
+					if (IsControlPressed(1, 27)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 0.0, 1.0) end
+					if (IsControlPressed(1, 173)) then position = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, 0.0, -1.0) end
 
-				SetEntityCoordsNoOffset(playerPed, position.x, position.y, position.z, 0, 0, 0)
-			end, 0)
-		else
-			ClearInterval(noclip)
-			local playerPed = ESX.PlayerData.ped
-			SetEntityInvincible(playerPed, false)
-			SetPedAoBlobRendering(playerPed, true)
-			ResetEntityAlpha(playerPed)
-			noclip = false
+					SetEntityCoordsNoOffset(playerPed, position.x, position.y, position.z, 0, 0, 0)
+				end, 0)
+			else
+				ClearInterval(noclip)
+				local playerPed = ESX.PlayerData.ped
+				SetEntityInvincible(playerPed, false)
+				SetPedAoBlobRendering(playerPed, true)
+				ResetEntityAlpha(playerPed)
+				noclip = false
+			end
+
+			TriggerEvent('chat:addMessage', ('Noclip has been %s'):format(noclip and 'enabled' or 'disabled'))
 		end
-
-		TriggerEvent('chat:addMessage', ('Noclip has been %s'):format(noclip and 'disabled' or 'enabled'))
-	end
+	end)
 end)
 
 -- Pause menu disables HUD display

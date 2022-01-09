@@ -18,16 +18,16 @@ end)
 
 Core.LoadJobs = function()
 	local Jobs = {}
-	exports.oxmysql:execute('SELECT * FROM jobs', {}, function(jobs)
+	MySQL.query('SELECT * FROM jobs', function(jobs)
 		for _, v in pairs(jobs) do
 			Jobs[v.name] = v
 			Jobs[v.name].grades = {}
 		end
 
-		exports.oxmysql:execute('SELECT * FROM job_grades', {}, function(grades)
+		MySQL.query('SELECT * FROM job_grades', function(grades)
 			for _, v in pairs(grades) do
 				if Jobs[v.job_name] then
-					Jobs[v.job_name].grades[v.grade] = v
+					Jobs[v.job_name].grades[tostring(v.grade)] = v
 				else
 					print(('[^3WARNING^7] Ignoring job grades for ^5"%s"^0 due to missing job'):format(v.job_name))
 				end

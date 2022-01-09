@@ -3,21 +3,25 @@ AddEventHandler('ox_inventory:loadInventory', function(module)
 	Inventory = module
 end)
 
-function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, coords)
-	local self = {}
+local function emptytable() return {} end
+local function emptyfn() end
 
-	self.accounts = accounts
-	self.coords = coords
-	self.group = group
-	self.identifier = identifier
-	self.inventory = {}
-	self.job = job
-	self.name = name
-	self.playerId = playerId
-	self.source = playerId
-	self.variables = {}
-	self.weight = 0
-	self.maxWeight = Config.MaxWeight
+function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, coords)
+	local self = {
+		accounts = accounts,
+		coords = coords,
+		group = group,
+		identifier = identifier,
+		inventory = {},
+		job = job,
+		name = name,
+		playerId = playerId,
+		source = playerId,
+		variables = {},
+		weight = 0,
+		maxWeight = Config.MaxWeight,
+		loadout = {}, -- babymode, activate
+	}
 	if Config.Multichar then self.license = Config.Identifier .. identifier:sub(identifier:find(':'), identifier:len()) else self.license = Config.Identifier .. ':'..identifier end
 
 	ExecuteCommand(('add_principal player.%s group.%s'):format(self.source, self.group))
@@ -192,11 +196,11 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 	end
 
 	self.addInventoryItem = function(name, count, metadata, slot)
-		Inventory.AddItem(self.source, name, count, metadata, slot)
+		Inventory.AddItem(self.source, name, count or 1, metadata, slot)
 	end
 
 	self.removeInventoryItem = function(name, count, metadata)
-		Inventory.RemoveItem(self.source, name, count, metadata)
+		Inventory.RemoveItem(self.source, name, count or 1, metadata)
 	end
 
 	self.setInventoryItem = function(name, count, metadata)
@@ -221,11 +225,11 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 
 	self.setMaxWeight = function(newWeight)
 		self.maxWeight = newWeight
-		return exports.ox_inventory:Inventory(self.source):set('maxWeight', newWeight)
+		return Inventory.Set(self.source, 'maxWeight', newWeight)
 	end
 
 	self.setJob = function(job, grade)
-		grade = tonumber(grade)
+		grade = tostring(grade)
 		if ESX.DoesJobExist(job, grade) then
 
 			if self.job.name ~= job then
@@ -239,7 +243,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 			self.job.name  = jobObject.name
 			self.job.label = jobObject.label
 
-			self.job.grade        = grade
+			self.job.grade        = tonumber(grade)
 			self.job.grade_name   = gradeObject.name
 			self.job.grade_label  = gradeObject.label
 			self.job.grade_salary = gradeObject.salary
@@ -271,6 +275,8 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 		end
 	end
 
+	self.getLoadout = function() return {} end
+
 	self.showNotification = function(msg)
 		self.triggerEvent('esx:showNotification', msg)
 	end
@@ -296,6 +302,21 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, job, name, 
 	self.getPlayerSlot = function(slot)
 		return self.inventory[slot]
 	end
+
+	-- babymode
+	self.getLoadout = emptytable
+	self.addWeapon = emptyfn
+	self.addWeaponComponent = emptyfn
+	self.addWeaponAmmo = emptyfn
+	self.updateWeaponAmmo = emptyfn
+	self.setWeaponTint = emptyfn
+	self.getWeaponTint = emptyfn
+	self.removeWeapon = emptyfn
+	self.removeWeaponComponent  = emptyfn
+	self.removeWeaponAmmo = emptyfn
+	self.hasWeaponComponent = emptyfn
+	self.hasWeapon = emptyfn
+	self.getWeapon = emptyfn
 
 	return self
 end
