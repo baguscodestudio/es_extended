@@ -67,4 +67,4 @@ Config.Accounts = {
 }
 
 -- Set identifier to ip when using FxDK or sv_lan
-Config.Identifier = GetConvar('sv_lan', '') == 'true' and 'ip' or GetConvar('primary_identifier', 'license')
+Config.Identifier = GetConvar('sv_lan', '') == 'true' and 'ip' or GetConvar('primary_identifier', 'steam')
